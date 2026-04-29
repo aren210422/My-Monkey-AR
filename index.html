@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>我的猴子 WebAR Demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #050505;
+      color: white;
+    }
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #111;
+    }
+    video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .ar-object {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: min(72vw, 360px);
+      aspect-ratio: 1 / 1;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      touch-action: none;
+      filter: drop-shadow(0 0 18px rgba(255, 214, 95, .75));
+    }
+    .glow {
+      position: absolute;
+      inset: 9%;
+      border: 3px solid rgba(255, 220, 120, .9);
+      border-radius: 50%;
+      box-shadow:
+        0 0 22px rgba(255, 200, 60, .9),
+        inset 0 0 26px rgba(255, 180, 50, .45);
+      animation: pulse 2.2s infinite ease-in-out;
+    }
+    .monkey-head {
+      position: absolute;
+      left: 50%;
+      top: 47%;
+      width: 58%;
+      height: 55%;
+      transform: translate(-50%, -50%);
+      border-radius: 48% 48% 44% 44%;
+      background: linear-gradient(145deg, #8b4f22, #5b2f12);
+      box-shadow: inset 0 -12px 24px rgba(0,0,0,.25), 0 0 24px rgba(255,190,80,.5);
+    }
+    .ear {
+      position: absolute;
+      top: 34%;
+      width: 23%;
+      height: 23%;
+      border-radius: 50%;
+      background: #6b3918;
+      border: 4px solid #4a250f;
+    }
+    .ear.left { left: 14%; }
+    .ear.right { right: 14%; }
+    .ear::after {
+      content: "";
+      position: absolute;
+      inset: 20%;
+      border-radius: 50%;
+      background: #f0b277;
+    }
+    .face {
+      position: absolute;
+      left: 50%;
+      top: 56%;
+      width: 72%;
+      height: 60%;
+      transform: translate(-50%, -50%);
+      border-radius: 50% 50% 46% 46%;
+      background: #f1bb7a;
+    }
+    .eye {
+      position: absolute;
+      top: 35%;
+      width: 10%;
+      height: 13%;
+      border-radius: 50%;
+      background: #17110c;
+      box-shadow: 0 0 0 4px rgba(255,255,255,.18);
+    }
+    .eye.left { left: 35%; }
+    .eye.right { right: 35%; }
+    .nose {
+      position: absolute;
+      left: 50%;
+      top: 53%;
+      width: 16%;
+      height: 10%;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: #6c3519;
+    }
+    .mouth {
+      position: absolute;
+      left: 50%;
+      top: 66%;
+      width: 32%;
+      height: 14%;
+      transform: translateX(-50%);
+      border-bottom: 5px solid #6c3519;
+      border-radius: 0 0 50% 50%;
+    }
+    .tail {
+      position: absolute;
+      right: 12%;
+      top: 62%;
+      width: 36%;
+      height: 34%;
+      border: 12px solid #6b3918;
+      border-left-color: transparent;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      transform: rotate(28deg);
+    }
+    .title {
+      position: absolute;
+      left: 50%;
+      bottom: 8%;
+      transform: translateX(-50%);
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, .45);
+      border: 1px solid rgba(255,255,255,.28);
+      backdrop-filter: blur(10px);
+      font-size: clamp(22px, 7vw, 42px);
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-shadow: 0 0 16px rgba(255,200,80,.95);
+      white-space: nowrap;
+    }
+    .topbar {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .buttons {
+      position: absolute;
+      left: 50%;
+      bottom: 84px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .badge, button {
+      border: 1px solid rgba(255,255,255,.25);
+      background: rgba(0,0,0,.45);
+      color: white;
+      border-radius: 999px;
+      padding: 10px 14px;
+      backdrop-filter: blur(10px);
+      font-weight: 800;
+    }
+    button {
+      pointer-events: auto;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .banana {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      font-size: 54px;
+      pointer-events: none;
+      z-index: 5;
+      transform: translate(-50%, -50%) rotate(-25deg);
+      animation: throwBanana .95s ease-out forwards;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.45));
+    }
+    .hint {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      width: min(92vw, 520px);
+      text-align: center;
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(0,0,0,.48);
+      border: 1px solid rgba(255,255,255,.2);
+      font-size: 14px;
+      line-height: 1.45;
+      pointer-events: none;
+    }
+    .error {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      background: #111;
+      z-index: 10;
+      line-height: 1.7;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(.96); opacity: .75; }
+      50% { transform: scale(1.04); opacity: 1; }
+    }
+    @keyframes throwBanana {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(.8) rotate(-25deg); }
+      60% { opacity: 1; transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(520deg); }
+      100% { opacity: 0; transform: translate(calc(var(--dx) * 1.25), calc(var(--dy) * 1.25)) scale(.9) rotate(760deg); }
+    }
+    @media (max-width: 480px) {
+      .ar-object { width: 80vw; }
+      .buttons { bottom: 92px; }
+      .hint { bottom: 14px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <video id="camera" autoplay playsinline muted></video>
+
+    <div class="overlay">
+      <div id="arObject" class="ar-object">
+        <div class="glow"></div>
+        <div class="tail"></div>
+        <div class="ear left"></div>
+        <div class="ear right"></div>
+        <div class="monkey-head">
+          <div class="face"></div>
+          <div class="eye left"></div>
+          <div class="eye right"></div>
+          <div class="nose"></div>
+          <div class="mouth"></div>
+        </div>
+        <div class="title">我的猴子</div>
+      </div>
+    </div>
+
+    <div class="topbar">
+      <div class="badge">WebAR Demo</div>
+      <button id="flipBtn">切換鏡頭</button>
+    </div>
+
+    <div class="buttons">
+      <button id="bananaBtn">🍌 丟香蕉</button>
+    </div>
+
+    <div class="hint">手機開啟後允許相機權限。拖曳猴子可移動位置；按「丟香蕉」可觸發香蕉特效。</div>
+
+    <div id="error" class="error"></div>
+  </div>
+
+  <script>
+    const app = document.getElementById('app');
+    const video = document.getElementById('camera');
+    const errorBox = document.getElementById('error');
+    const flipBtn = document.getElementById('flipBtn');
+    const bananaBtn = document.getElementById('bananaBtn');
+    const arObject = document.getElementById('arObject');
+
+    let currentStream = null;
+    let facingMode = 'environment';
+
+    async function startCamera() {
+      try {
+        if (currentStream) currentStream.getTracks().forEach(track => track.stop());
+
+        currentStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: facingMode },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+
+        video.srcObject = currentStream;
+        errorBox.style.display = 'none';
+      } catch (err) {
+        errorBox.style.display = 'flex';
+        errorBox.innerHTML = `
+          <div>
+            <h2>無法開啟相機</h2>
+            <p>請確認已允許瀏覽器相機權限。</p>
+            <p>手機建議使用 Chrome / Safari，並透過 HTTPS 或 localhost 開啟。</p>
+            <p style="opacity:.7">${err.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    flipBtn.addEventListener('click', () => {
+      facingMode = facingMode === 'environment' ? 'user' : 'environment';
+      video.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'none';
+      startCamera();
+    });
+
+    bananaBtn.addEventListener('click', () => {
+      const rect = arObject.getBoundingClientRect();
+      const banana = document.createElement('div');
+      banana.className = 'banana';
+      banana.textContent = '🍌';
+      banana.style.left = `${rect.left + rect.width / 2}px`;
+      banana.style.top = `${rect.top + rect.height / 2}px`;
+
+      const dx = (Math.random() > 0.5 ? 1 : -1) * (window.innerWidth * (0.35 + Math.random() * 0.25));
+      const dy = -(window.innerHeight * (0.25 + Math.random() * 0.25));
+      banana.style.setProperty('--dx', `${dx}px`);
+      banana.style.setProperty('--dy', `${dy}px`);
+
+      app.appendChild(banana);
+      banana.addEventListener('animationend', () => banana.remove());
+    });
+
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    arObject.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      arObject.setPointerCapture(e.pointerId);
+      const rect = arObject.getBoundingClientRect();
+      offsetX = e.clientX - rect.left - rect.width / 2;
+      offsetY = e.clientY - rect.top - rect.height / 2;
+    });
+
+    arObject.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      arObject.style.left = `${e.clientX - offsetX}px`;
+      arObject.style.top = `${e.clientY - offsetY}px`;
+      arObject.style.transform = 'translate(-50%, -50%)';
+    });
+
+    arObject.addEventListener('pointerup', () => dragging = false);
+    arObject.addEventListener('pointercancel', () => dragging = false);
+
+    startCamera();
+  </script>
+</body>
+</html>
