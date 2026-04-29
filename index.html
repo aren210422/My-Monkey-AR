@@ -65,6 +65,7 @@
       z-index: 4;
       pointer-events: auto;
     }
+    .wide { grid-column: span 1; }
     .badge, button {
       border: 1px solid rgba(255,255,255,.25);
       background: rgba(0,0,0,.50);
@@ -75,11 +76,7 @@
       font-weight: 850;
       box-shadow: 0 8px 24px rgba(0,0,0,.22);
     }
-    button {
-      pointer-events: auto;
-      cursor: pointer;
-      font-size: 15px;
-    }
+    button { pointer-events: auto; cursor: pointer; font-size: 15px; }
     button:active { transform: scale(.96); }
     .hint {
       position: absolute;
@@ -114,6 +111,46 @@
       white-space: nowrap;
     }
     .speechText.show { animation: speechPopup 1.15s ease-out forwards; }
+    .oraText {
+      position: absolute;
+      z-index: 6;
+      pointer-events: none;
+      font-weight: 1000;
+      font-size: clamp(32px, 9vw, 78px);
+      color: #fff45c;
+      -webkit-text-stroke: 2px #5c1eff;
+      text-shadow: 0 0 18px rgba(255,245,80,.95), 0 8px 20px rgba(0,0,0,.75);
+      animation: oraBurst .58s ease-out forwards;
+    }
+    .pressureText {
+      position: absolute;
+      z-index: 5;
+      pointer-events: none;
+      font-weight: 1000;
+      writing-mode: vertical-rl;
+      letter-spacing: .04em;
+      font-size: clamp(34px, 8vw, 82px);
+      color: rgba(98, 47, 255, .92);
+      -webkit-text-stroke: 1.5px rgba(255,255,180,.92);
+      text-shadow: 0 0 18px rgba(110,60,255,.95), 0 8px 24px rgba(0,0,0,.85);
+      opacity: 0;
+      animation: pressureFloat 1.35s ease-out forwards;
+    }
+    .barrageSubtitle {
+      position: absolute;
+      left: 50%;
+      top: 12%;
+      transform: translateX(-50%);
+      z-index: 7;
+      pointer-events: none;
+      font-weight: 1000;
+      font-size: clamp(28px, 7vw, 58px);
+      color: #ffffff;
+      -webkit-text-stroke: 2px #8a1eff;
+      text-shadow: 0 0 18px rgba(255,255,90,.95), 0 8px 20px rgba(0,0,0,.75);
+      opacity: 0;
+    }
+    .barrageSubtitle.show { animation: barrageSubtitlePop 1.25s ease-out forwards; }
     .error {
       position: absolute;
       inset: 0;
@@ -131,6 +168,23 @@
       20% { opacity: 1; transform: translateX(-50%) scale(1.15) rotate(4deg); }
       62% { opacity: 1; transform: translateX(-50%) scale(1) rotate(-2deg); }
       100% { opacity: 0; transform: translateX(-50%) scale(1.25) translateY(-34px); }
+    }
+    @keyframes oraBurst {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(.35) rotate(var(--r)); }
+      18% { opacity: 1; transform: translate(calc(-50% + var(--dx) * .25), calc(-50% + var(--dy) * .25)) scale(1.35) rotate(var(--r)); }
+      100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.85) rotate(var(--r)); }
+    }
+    @keyframes pressureFloat {
+      0% { opacity: 0; transform: translateY(24px) scale(.86) rotate(var(--r)); }
+      18% { opacity: .95; transform: translateY(0) scale(1.04) rotate(var(--r)); }
+      72% { opacity: .9; transform: translateY(-12px) scale(1.02) rotate(var(--r)); }
+      100% { opacity: 0; transform: translateY(-36px) scale(1.12) rotate(var(--r)); }
+    }
+    @keyframes barrageSubtitlePop {
+      0% { opacity: 0; transform: translateX(-50%) scale(.7); }
+      18% { opacity: 1; transform: translateX(-50%) scale(1.12); }
+      72% { opacity: 1; transform: translateX(-50%) scale(1); }
+      100% { opacity: 0; transform: translateX(-50%) scale(1.25) translateY(-20px); }
     }
     @media (max-width: 520px) {
       .controlPanel { bottom: 82px; gap: 8px; }
@@ -150,16 +204,17 @@
     </div>
 
     <div class="controlPanel">
-      <button id="action1Btn">動作一：丟香蕉</button>
-      <button id="voice1Btn">語音一：嗚吱嗚吱</button>
-      <button id="action2Btn">動作二：扁人</button>
-      <button id="voice2Btn">語音二：聽不懂</button>
-      <button id="action3Btn">動作三：抓屁屁</button>
+      <button id="action1Btn">動作一</button>
+      <button id="voice1Btn">語音一</button>
+      <button id="action2Btn">動作二</button>
+      <button id="voice2Btn">語音二</button>
+      <button id="action3Btn">動作三</button>
       <button id="resetBtn">重置</button>
     </div>
 
     <div id="speechText" class="speechText">嗚吱嗚吱！</div>
-    <div class="hint">單指滑動：像手遊一樣旋轉，有慣性。雙指拖曳：移動猴子。雙指縮放：放大/縮小。</div>
+    <div id="barrageSubtitle" class="barrageSubtitle">オラオラオラオラ！</div>
+    <div class="hint">單指滑動：旋轉猴子，有慣性。雙指拖曳：移動猴子。雙指縮放：放大/縮小。</div>
     <div id="error" class="error"></div>
   </div>
 
@@ -187,6 +242,7 @@
     const voice2Btn = document.getElementById('voice2Btn');
     const resetBtn = document.getElementById('resetBtn');
     const speechText = document.getElementById('speechText');
+    const barrageSubtitle = document.getElementById('barrageSubtitle');
     const threeLayer = document.getElementById('threeLayer');
 
     let currentStream = null;
@@ -210,8 +266,8 @@
         errorBox.innerHTML = `
           <div>
             <h2>無法開啟相機</h2>
-            <p>請確認已允許瀏覽器相機權限。</p>
-            <p>手機建議使用 Chrome / Safari，並透過 HTTPS 或 localhost 開啟。</p>
+            <p>Please allow camera permission in your browser.</p>
+            <p>Use Chrome / Safari on mobile, and open via HTTPS or localhost.</p>
             <p style="opacity:.7">${err.message}</p>
           </div>
         `;
@@ -226,13 +282,7 @@
     startCamera();
 
     const scene = new THREE.Scene();
-
-    const camera3D = new THREE.PerspectiveCamera(
-      55,
-      window.innerWidth / window.innerHeight,
-      0.01,
-      100
-    );
+    const camera3D = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 100);
     camera3D.position.set(0, 0.25, 4.4);
     camera3D.lookAt(0, 0.15, 0);
 
@@ -245,12 +295,10 @@
     threeLayer.appendChild(renderer.domElement);
 
     scene.add(new THREE.AmbientLight(0xffffff, 1.05));
-
     const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
     keyLight.position.set(3, 5, 4);
     keyLight.castShadow = true;
     scene.add(keyLight);
-
     const rimLight = new THREE.DirectionalLight(0xffcc88, 1.4);
     rimLight.position.set(-4, 2, 3);
     scene.add(rimLight);
@@ -281,66 +329,56 @@
       lastTwoDistance: 0
     };
 
+    function fallbackMonkey() {
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x8b4f22, roughness: 0.52, metalness: 0.04 });
+      const faceMat = new THREE.MeshStandardMaterial({ color: 0xf0b277, roughness: 0.7 });
+      const darkMat = new THREE.MeshStandardMaterial({ color: 0x15100b, roughness: 0.45 });
+      const group = new THREE.Group();
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.75, 48, 32), bodyMat);
+      head.scale.set(1, 1.05, 0.9);
+      head.castShadow = true;
+      group.add(head);
+      const face = new THREE.Mesh(new THREE.SphereGeometry(0.46, 32, 24), faceMat);
+      face.position.set(0, -0.1, 0.55);
+      face.scale.set(1.05, 0.82, 0.36);
+      face.castShadow = true;
+      group.add(face);
+      const earL = new THREE.Mesh(new THREE.SphereGeometry(0.26, 32, 24), bodyMat);
+      earL.position.set(-0.67, 0.15, 0.02);
+      earL.castShadow = true;
+      group.add(earL);
+      const earR = earL.clone();
+      earR.position.x = 0.67;
+      group.add(earR);
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 12), darkMat);
+      eyeL.position.set(-0.23, 0.12, 0.77);
+      group.add(eyeL);
+      const eyeR = eyeL.clone();
+      eyeR.position.x = 0.23;
+      group.add(eyeR);
+      const nose = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12), darkMat);
+      nose.position.set(0, -0.1, 0.83);
+      nose.scale.set(1.3, 0.75, 0.55);
+      group.add(nose);
+      return group;
+    }
+
     function fitModel(object) {
       const box = new THREE.Box3().setFromObject(object);
       const size = new THREE.Vector3();
       const center = new THREE.Vector3();
-
       box.getSize(size);
       box.getCenter(center);
-
       object.position.sub(center);
-
       const maxSide = Math.max(size.x, size.y, size.z) || 1;
       object.scale.multiplyScalar(1.75 / maxSide);
-
       object.rotation.y = Math.PI;
-
       object.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
         }
       });
-    }
-
-    function fallbackMonkey() {
-      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x8b4f22, roughness: 0.52 });
-      const faceMat = new THREE.MeshStandardMaterial({ color: 0xf0b277, roughness: 0.7 });
-      const darkMat = new THREE.MeshStandardMaterial({ color: 0x15100b, roughness: 0.45 });
-      const group = new THREE.Group();
-
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.75, 48, 32), bodyMat);
-      head.scale.set(1, 1.05, 0.9);
-      group.add(head);
-
-      const face = new THREE.Mesh(new THREE.SphereGeometry(0.46, 32, 24), faceMat);
-      face.position.set(0, -0.1, 0.55);
-      face.scale.set(1.05, 0.82, 0.36);
-      group.add(face);
-
-      const earL = new THREE.Mesh(new THREE.SphereGeometry(0.26, 32, 24), bodyMat);
-      earL.position.set(-0.67, 0.15, 0.02);
-      group.add(earL);
-
-      const earR = earL.clone();
-      earR.position.x = 0.67;
-      group.add(earR);
-
-      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 12), darkMat);
-      eyeL.position.set(-0.23, 0.12, 0.77);
-      group.add(eyeL);
-
-      const eyeR = eyeL.clone();
-      eyeR.position.x = 0.23;
-      group.add(eyeR);
-
-      const nose = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12), darkMat);
-      nose.position.set(0, -0.1, 0.83);
-      nose.scale.set(1.3, 0.75, 0.55);
-      group.add(nose);
-
-      return group;
     }
 
     new GLTFLoader().load(
@@ -352,7 +390,7 @@
       },
       undefined,
       (error) => {
-        console.error('monkey.glb 載入失敗，改用內建備援猴子：', error);
+        console.error('Failed to load monkey.glb, using fallback monkey:', error);
         monkey = fallbackMonkey();
         visualGroup.add(monkey);
       }
@@ -360,46 +398,27 @@
 
     function makeBanana() {
       const group = new THREE.Group();
-
-      const mat = new THREE.MeshStandardMaterial({
-        color: 0xffdf3d,
-        roughness: 0.42,
-        metalness: 0.02
-      });
-
-      const tipMat = new THREE.MeshStandardMaterial({
-        color: 0x6b3f16,
-        roughness: 0.6
-      });
-
-      const lineMat = new THREE.MeshStandardMaterial({
-        color: 0xf5b400,
-        roughness: 0.55
-      });
-
+      const mat = new THREE.MeshStandardMaterial({ color: 0xffdf3d, roughness: 0.42, metalness: 0.02 });
+      const tipMat = new THREE.MeshStandardMaterial({ color: 0x6b3f16, roughness: 0.6 });
+      const lineMat = new THREE.MeshStandardMaterial({ color: 0xf5b400, roughness: 0.55 });
       const curve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(-0.42, -0.04, 0),
         new THREE.Vector3(-0.2, 0.18, 0),
         new THREE.Vector3(0.16, 0.19, 0),
         new THREE.Vector3(0.42, -0.02, 0)
       ]);
-
       const body = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.065, 14, false), mat);
       body.castShadow = true;
       group.add(body);
-
       const line = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.018, 8, false), lineMat);
       line.position.z = 0.052;
       group.add(line);
-
       const tip1 = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 8), tipMat);
       tip1.position.set(-0.42, -0.04, 0);
       group.add(tip1);
-
       const tip2 = tip1.clone();
       tip2.position.set(0.42, -0.02, 0);
       group.add(tip2);
-
       group.scale.setScalar(0.42);
       return group;
     }
@@ -407,43 +426,19 @@
     function createExplosion(position, size = 1) {
       const group = new THREE.Group();
       group.position.copy(position);
-
       const colors = [0xffdd44, 0xff8c00, 0xff3d00, 0xffffff];
-
       for (let i = 0; i < 36; i++) {
-        const mat = new THREE.MeshBasicMaterial({
-          color: colors[i % colors.length],
-          transparent: true,
-          opacity: 1
-        });
-
-        const piece = new THREE.Mesh(
-          new THREE.SphereGeometry((0.035 + Math.random() * 0.05) * size, 10, 8),
-          mat
-        );
-
-        const dir = new THREE.Vector3(
-          (Math.random() - 0.5) * 2,
-          (Math.random() - 0.5) * 2,
-          (Math.random() - 0.5) * 2
-        ).normalize();
-
+        const mat = new THREE.MeshBasicMaterial({ color: colors[i % colors.length], transparent: true, opacity: 1 });
+        const piece = new THREE.Mesh(new THREE.SphereGeometry((0.035 + Math.random() * 0.05) * size, 10, 8), mat);
+        const dir = new THREE.Vector3((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2).normalize();
         piece.userData.velocity = dir.multiplyScalar((1.2 + Math.random() * 2.4) * size);
         group.add(piece);
       }
-
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: 0xffe066,
-        transparent: true,
-        opacity: 0.85,
-        side: THREE.DoubleSide
-      });
-
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
       const ring = new THREE.Mesh(new THREE.RingGeometry(0.12 * size, 0.16 * size, 48), ringMat);
       ring.rotation.x = Math.PI / 2;
       ring.userData.isRing = true;
       group.add(ring);
-
       group.userData.life = 0.78;
       scene.add(group);
       explosions.push(group);
@@ -452,48 +447,37 @@
     function createFist() {
       const group = new THREE.Group();
       const mat = new THREE.MeshStandardMaterial({ color: 0x8b4f22, roughness: 0.48 });
-
       const palm = new THREE.Mesh(new THREE.SphereGeometry(0.26, 24, 18), mat);
       palm.scale.set(1.05, 0.85, 0.85);
       group.add(palm);
-
       for (let i = 0; i < 4; i++) {
         const finger = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12), mat);
         finger.position.set(-0.18 + i * 0.12, 0.12, 0.12);
         group.add(finger);
       }
-
       group.scale.setScalar(0.75);
-      group.position.set(0.62, 0.1, 0.45);
+      const base = monkeyGroup.position.clone();
+      group.position.copy(base).add(new THREE.Vector3(0.62, 0.1, 0.45));
       group.userData.life = 0.55;
-
       scene.add(group);
       fists.push(group);
     }
 
     function createScratchMarks() {
       const group = new THREE.Group();
-      const mat = new THREE.MeshBasicMaterial({
-        color: 0xffe066,
-        transparent: true,
-        opacity: 1
-      });
-
+      const mat = new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 1 });
       for (let i = 0; i < 3; i++) {
         const curve = new THREE.CatmullRomCurve3([
           new THREE.Vector3(-0.12 + i * 0.12, 0.08, 0),
           new THREE.Vector3(-0.16 + i * 0.12, -0.02, 0),
           new THREE.Vector3(-0.09 + i * 0.12, -0.14, 0)
         ]);
-
         const mark = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.012, 6, false), mat);
         group.add(mark);
       }
-
       group.position.set(0.25, -0.48, 0.82);
       group.rotation.z = -0.2;
       group.userData.life = 0.7;
-
       scene.add(group);
       scratchMarks.push(group);
     }
@@ -502,43 +486,86 @@
       actionState = { type, t: 0, duration };
     }
 
-    function easeOutBack(x) {
-      const c1 = 1.70158;
-      const c3 = c1 + 1;
-      return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
-    }
-
     function actionThrowBanana() {
       startAction('throw', 0.75);
-
       setTimeout(() => {
         const banana = makeBanana();
-
-        // 猴子往前方丟香蕉：
-        // 起點在猴子前方，目標在畫面前方，抵達後爆炸。
-        const start = new THREE.Vector3(0.34, -0.08, 0.72).applyMatrix4(monkeyGroup.matrixWorld);
-        const target = new THREE.Vector3(0.15, 0.05, 2.7).applyMatrix4(monkeyGroup.matrixWorld);
+        // 猴子往自己前方丟：從猴子前面出發，往畫面前方 / 使用者方向飛，最後在前方爆炸。
+        const base = monkeyGroup.position.clone();
+        // Use screen-forward direction; independent of monkey rotation.
+        const start = base.clone().add(new THREE.Vector3(0.32, 0.02, 0.58));
+        const target = base.clone().add(new THREE.Vector3(0.02, 0.08, 2.85));
         const direction = new THREE.Vector3().subVectors(target, start).normalize();
-
         banana.position.copy(start);
         banana.rotation.set(0.45, 0.15, -0.75);
         banana.userData.velocity = direction.multiplyScalar(3.7);
         banana.userData.target = target;
         banana.userData.life = 1.1;
         banana.userData.spin = new THREE.Vector3(8.5, 12.5, 16.5);
-
         scene.add(banana);
         bananas.push(banana);
       }, 230);
     }
 
-    function actionBeatPeople() {
-      startAction('beat', 0.9);
+    function createOraText(text = 'オラ') {
+      const el = document.createElement('div');
+      el.className = 'oraText';
+      el.textContent = text;
+      el.style.left = `${35 + Math.random() * 30}%`;
+      el.style.top = `${28 + Math.random() * 28}%`;
+      el.style.setProperty('--dx', `${(Math.random() - 0.5) * 160}px`);
+      el.style.setProperty('--dy', `${-50 - Math.random() * 130}px`);
+      el.style.setProperty('--r', `${-18 + Math.random() * 36}deg`);
+      app.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }
 
-      setTimeout(() => createFist(), 120);
+    function createPressureText(text = 'ゴゴゴゴ…') {
+      const el = document.createElement('div');
+      el.className = 'pressureText';
+      el.textContent = text;
+      el.style.left = `${Math.random() > 0.5 ? 7 + Math.random() * 10 : 76 + Math.random() * 12}%`;
+      el.style.top = `${16 + Math.random() * 50}%`;
+      el.style.setProperty('--r', `${-8 + Math.random() * 16}deg`);
+      app.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }
+
+    function showBarrageSubtitle(text = 'オラオラオラオラ！') {
+      barrageSubtitle.textContent = text;
+      barrageSubtitle.classList.remove('show');
+      void barrageSubtitle.offsetWidth;
+      barrageSubtitle.classList.add('show');
+    }
+
+    function actionBeatPeople() {
+      startAction('beat', 1.45);
+      showSpeech('オラオラオラ！');
+      showBarrageSubtitle('オラオラオラオラ！');
+      playSynthRoar('wild');
+
+      createPressureText('ゴゴゴゴ…');
+      setTimeout(() => createPressureText('ゴゴゴゴ…'), 180);
+      setTimeout(() => createPressureText('ドドドドッ'), 520);
+
+      for (let i = 0; i < 10; i++) {
+        setTimeout(() => {
+          createFist();
+          createOraText(i % 3 === 0 ? 'オラ！' : 'オラ');
+          if (i % 2 === 1) {
+            const base = monkeyGroup.position.clone();
+            createExplosion(
+              base.add(new THREE.Vector3((Math.random() - 0.5) * 0.9, (Math.random() - 0.5) * 0.55, 2.35 + Math.random() * 0.45)),
+              0.55
+            );
+          }
+        }, 80 + i * 85);
+      }
+
       setTimeout(() => {
-        createExplosion(new THREE.Vector3(0.05, 0.0, 2.35), 0.9);
-      }, 310);
+        const base = monkeyGroup.position.clone();
+        createExplosion(base.add(new THREE.Vector3(0.03, 0.03, 2.75)), 1.25);
+      }, 950);
     }
 
     function actionScratchButt() {
@@ -556,16 +583,14 @@
     function speak(text, options = {}) {
       try {
         window.speechSynthesis.cancel();
-
         const utter = new SpeechSynthesisUtterance(text);
         utter.lang = 'zh-TW';
         utter.rate = options.rate ?? 1.2;
         utter.pitch = options.pitch ?? 1.4;
         utter.volume = 1;
-
         window.speechSynthesis.speak(utter);
       } catch (err) {
-        console.warn('語音播放失敗：', err);
+        console.warn('Speech failed:', err);
       }
     }
 
@@ -574,7 +599,6 @@
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const ctx = new AudioContext();
         const now = ctx.currentTime;
-
         const master = ctx.createGain();
         master.gain.setValueAtTime(0.0001, now);
         master.gain.exponentialRampToValueAtTime(mode === 'wild' ? 0.42 : 0.28, now + 0.03);
@@ -582,33 +606,23 @@
         master.connect(ctx.destination);
 
         const freqs = mode === 'wild' ? [720, 940, 620, 880] : [420, 520, 480];
-
         freqs.forEach((freq, index) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
-
           osc.type = mode === 'wild' ? 'sawtooth' : 'square';
-
           const t = now + index * 0.11;
-
           osc.frequency.setValueAtTime(freq, t);
-          osc.frequency.exponentialRampToValueAtTime(
-            freq * (mode === 'wild' ? 0.62 : 1.15),
-            t + 0.16
-          );
-
+          osc.frequency.exponentialRampToValueAtTime(freq * (mode === 'wild' ? 0.62 : 1.15), t + 0.16);
           gain.gain.setValueAtTime(0.001, t);
           gain.gain.exponentialRampToValueAtTime(0.55, t + 0.025);
           gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-
           osc.connect(gain).connect(master);
           osc.start(t);
           osc.stop(t + 0.2);
         });
-
         setTimeout(() => ctx.close(), 1000);
       } catch (err) {
-        console.warn('音效播放失敗：', err);
+        console.warn('Audio failed:', err);
       }
     }
 
@@ -643,24 +657,14 @@
       monkeyGroup.scale.set(1, 1, 1);
     });
 
-    function pointerPosition(e) {
-      return { x: e.clientX, y: e.clientY };
-    }
-
-    function centerOf(a, b) {
-      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    }
-
-    function distanceOf(a, b) {
-      return Math.hypot(a.x - b.x, a.y - b.y);
-    }
+    function pointerPosition(e) { return { x: e.clientX, y: e.clientY }; }
+    function centerOf(a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+    function distanceOf(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
     app.addEventListener('pointerdown', (e) => {
       if (e.target.tagName === 'BUTTON') return;
-
       app.setPointerCapture(e.pointerId);
       control.activePointers.set(e.pointerId, pointerPosition(e));
-
       if (control.activePointers.size === 1) {
         control.lastSingle = pointerPosition(e);
       } else if (control.activePointers.size === 2) {
@@ -672,40 +676,31 @@
 
     app.addEventListener('pointermove', (e) => {
       if (!control.activePointers.has(e.pointerId)) return;
-
       control.activePointers.set(e.pointerId, pointerPosition(e));
 
       if (control.activePointers.size === 1) {
         const p = pointerPosition(e);
-
         if (!control.lastSingle) control.lastSingle = p;
-
         const dx = p.x - control.lastSingle.x;
         const dy = p.y - control.lastSingle.y;
-
         control.lastSingle = p;
-
-        // 手遊感：滑動後保留旋轉速度，animate 裡做慣性衰減。
+        // Mobile-game feel: keep swipe velocity, then damp in animate().
         control.rotationVelocityY += dx * 0.00095;
         control.rotationVelocityX += dy * 0.00055;
       } else if (control.activePointers.size === 2) {
         const pts = [...control.activePointers.values()];
         const center = centerOf(pts[0], pts[1]);
         const dist = distanceOf(pts[0], pts[1]);
-
         if (control.lastTwoCenter) {
           const dx = center.x - control.lastTwoCenter.x;
           const dy = center.y - control.lastTwoCenter.y;
-
           control.targetPosition.x += dx / window.innerWidth * 4.2;
           control.targetPosition.y -= dy / window.innerHeight * 4.2;
         }
-
         if (control.lastTwoDistance > 0) {
           const ratio = dist / control.lastTwoDistance;
           control.targetScale = THREE.MathUtils.clamp(control.targetScale * ratio, 0.45, 2.2);
         }
-
         control.lastTwoCenter = center;
         control.lastTwoDistance = dist;
       }
@@ -716,15 +711,19 @@
       control.lastSingle = null;
       control.lastTwoCenter = null;
       control.lastTwoDistance = 0;
-
       if (control.activePointers.size === 1) {
         const only = [...control.activePointers.values()][0];
         control.lastSingle = only;
       }
     }
-
     app.addEventListener('pointerup', endPointer);
     app.addEventListener('pointercancel', endPointer);
+
+    function easeOutBack(x) {
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+    }
 
     function updateMonkeyAction(dt, elapsed) {
       visualGroup.position.set(0, 0, 0);
@@ -732,9 +731,7 @@
       visualGroup.scale.set(1, 1, 1);
 
       if (!actionState.type || actionState.type === 'idle') return;
-
       actionState.t += dt;
-
       const p = Math.min(actionState.t / actionState.duration, 1);
 
       if (actionState.type === 'throw') {
@@ -745,14 +742,14 @@
       }
 
       if (actionState.type === 'beat') {
-        const punch =
-          p < 0.45
-            ? easeOutBack(p / 0.45)
-            : Math.max(0, 1 - (p - 0.45) / 0.55);
-
-        visualGroup.position.z = 0.42 * punch;
-        visualGroup.rotation.x = -0.25 * punch;
-        visualGroup.rotation.z = Math.sin(p * Math.PI * 8) * 0.04;
+        const punch = Math.sin(p * Math.PI);
+        const barrage = Math.sin(p * Math.PI * 18) * Math.sin(p * Math.PI);
+        visualGroup.position.z = 0.28 * punch + 0.055 * Math.abs(barrage);
+        visualGroup.position.x = 0.055 * barrage;
+        visualGroup.rotation.x = -0.18 * punch;
+        visualGroup.rotation.y = 0.18 * barrage;
+        visualGroup.rotation.z = 0.11 * barrage;
+        visualGroup.scale.set(1 + 0.08 * Math.abs(barrage), 1 - 0.035 * Math.abs(barrage), 1 + 0.08 * Math.abs(barrage));
       }
 
       if (actionState.type === 'scratch') {
@@ -763,7 +760,7 @@
       }
 
       if (actionState.type === 'rage') {
-        const amp = 1 - p;
+        const amp = (1 - p);
         visualGroup.rotation.z = Math.sin(elapsed * 85) * 0.045 * amp;
         visualGroup.scale.setScalar(1 + Math.abs(Math.sin(elapsed * 60)) * 0.08 * amp);
       }
@@ -774,27 +771,22 @@
         visualGroup.scale.set(1.02, 0.98, 1.02);
       }
 
-      if (p >= 1) {
-        actionState = { type: 'idle', t: 0, duration: 0 };
-      }
+      if (p >= 1) actionState = { type: 'idle', t: 0, duration: 0 };
     }
 
     function animate() {
       requestAnimationFrame(animate);
-
       const dt = Math.min(clock.getDelta(), 0.033);
       const elapsed = clock.elapsedTime;
 
-      // 絲滑控制：旋轉速度 + 阻尼，位置/縮放用 lerp。
+      // Smooth control: damp rotation velocity; lerp position/scale.
       monkeyGroup.rotation.y += control.rotationVelocityY;
       monkeyGroup.rotation.x += control.rotationVelocityX;
       monkeyGroup.rotation.x = THREE.MathUtils.clamp(monkeyGroup.rotation.x, -0.75, 0.75);
-
       control.rotationVelocityY *= 0.94;
       control.rotationVelocityX *= 0.92;
 
       monkeyGroup.position.lerp(control.targetPosition, 0.16);
-
       control.currentScale = THREE.MathUtils.lerp(control.currentScale, control.targetScale, 0.15);
       monkeyGroup.scale.setScalar(control.currentScale);
 
@@ -810,59 +802,41 @@
         banana.rotation.x += banana.userData.spin.x * dt;
         banana.rotation.y += banana.userData.spin.y * dt;
         banana.rotation.z += banana.userData.spin.z * dt;
-
         if (!banana.userData.exploded && banana.position.distanceTo(banana.userData.target) < 0.22) {
           banana.userData.exploded = true;
           createExplosion(banana.position.clone(), 1.15);
           banana.userData.life = 0;
         }
       });
-
       bananas = bananas.filter((banana) => {
-        if (banana.userData.life <= 0) {
-          scene.remove(banana);
-          return false;
-        }
+        if (banana.userData.life <= 0) { scene.remove(banana); return false; }
         return true;
       });
 
       fists.forEach((fist) => {
         fist.userData.life -= dt;
         const p = 1 - fist.userData.life / 0.55;
-
         fist.position.z = 0.45 + p * 1.95;
         fist.rotation.z += dt * 7;
         fist.scale.setScalar(0.75 + p * 0.6);
       });
-
       fists = fists.filter((fist) => {
-        if (fist.userData.life <= 0) {
-          scene.remove(fist);
-          return false;
-        }
+        if (fist.userData.life <= 0) { scene.remove(fist); return false; }
         return true;
       });
 
       scratchMarks.forEach((mark) => {
         mark.userData.life -= dt;
         mark.rotation.z += Math.sin(elapsed * 30) * 0.006;
-
-        mark.children.forEach((child) => {
-          child.material.opacity = Math.max(0, mark.userData.life / 0.7);
-        });
+        mark.children.forEach((child) => child.material.opacity = Math.max(0, mark.userData.life / 0.7));
       });
-
       scratchMarks = scratchMarks.filter((mark) => {
-        if (mark.userData.life <= 0) {
-          scene.remove(mark);
-          return false;
-        }
+        if (mark.userData.life <= 0) { scene.remove(mark); return false; }
         return true;
       });
 
       explosions.forEach((explosion) => {
         explosion.userData.life -= dt;
-
         explosion.children.forEach((child) => {
           if (child.userData.isRing) {
             const scale = 1 + (0.78 - explosion.userData.life) * 7;
@@ -875,18 +849,13 @@
           }
         });
       });
-
       explosions = explosions.filter((explosion) => {
-        if (explosion.userData.life <= 0) {
-          scene.remove(explosion);
-          return false;
-        }
+        if (explosion.userData.life <= 0) { scene.remove(explosion); return false; }
         return true;
       });
 
       renderer.render(scene, camera3D);
     }
-
     animate();
 
     window.addEventListener('resize', () => {
